@@ -84,8 +84,7 @@ useEchoPublic('demo', ['DemoMessageSent'], (e: Message) => {
                     <CardContent class="flex flex-1 flex-col">
                         <div
                             ref="messagesContainer"
-                            class="mb-4 flex-1 space-y-2 overflow-y-auto"
-                            :class="allMessages.length ? 'min-h-[24rem]' : ''"
+                            class="mb-4 max-h-[calc(100vh-20rem)] space-y-2 overflow-y-auto"
                         >
                             <template v-if="allMessages.length">
                                 <div
