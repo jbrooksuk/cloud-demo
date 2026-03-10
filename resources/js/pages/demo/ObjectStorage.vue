@@ -126,13 +126,20 @@ const formatSize = (bytes: number): string => {
                                     {{ formatSize(file.size) }} &middot; {{ file.lastModified }}
                                 </p>
                             </div>
-                            <Button
-                                variant="destructive"
-                                size="sm"
-                                @click="deleteFile(file.path)"
-                            >
-                                Delete
-                            </Button>
+                            <div class="flex shrink-0 gap-2">
+                                <a :href="file.url" target="_blank" rel="noopener noreferrer">
+                                    <Button variant="outline" size="sm">
+                                        Preview
+                                    </Button>
+                                </a>
+                                <Button
+                                    variant="destructive"
+                                    size="sm"
+                                    @click="deleteFile(file.path)"
+                                >
+                                    Delete
+                                </Button>
+                            </div>
                         </div>
                     </div>
                     <p v-else class="text-sm text-muted-foreground">
