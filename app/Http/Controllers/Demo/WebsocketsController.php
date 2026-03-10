@@ -43,11 +43,15 @@ class WebsocketsController extends Controller
             'message' => $request->input('message'),
         ]);
 
-        DemoMessageSent::dispatch(
-            username: $demoMessage->username,
-            message: $demoMessage->message,
-            timestamp: $demoMessage->created_at->toISOString(),
-        );
+        try {
+            DemoMessageSent::dispatch(
+                username: $demoMessage->username,
+                message: $demoMessage->message,
+                timestamp: $demoMessage->created_at->toISOString(),
+            );
+        } catch (\Throwable) {
+            // Broadcasting may not be available; the message was still saved.
+        }
 
         return response()->json(['status' => 'ok']);
     }
