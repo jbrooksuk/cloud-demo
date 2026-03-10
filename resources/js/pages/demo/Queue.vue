@@ -1,16 +1,17 @@
 <script setup lang="ts">
 import { Head, router } from '@inertiajs/vue3';
-import { ref } from 'vue';
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Spinner } from '@/components/ui/spinner';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { queue } from '@/routes/demo';
+import { dispatch as dispatchAction } from '@/actions/App/Http/Controllers/Demo/QueueController';
 import type { BreadcrumbItem } from '@/types';
 
 const props = defineProps<{
     jobs: Array<{
-        id: string;
+        id: number;
         status: string;
         started_at?: string;
         completed_at?: string;
@@ -24,13 +25,37 @@ const breadcrumbs: BreadcrumbItem[] = [
 ];
 
 const dispatching = ref(false);
+const hasPendingJobs = computed(() => props.jobs.some(j => j.status !== 'completed'));
+
+let pollInterval: ReturnType<typeof setInterval> | null = null;
+
+const startPolling = (): void => {
+    if (pollInterval) return;
+    pollInterval = setInterval(() => {
+        router.reload({ only: ['jobs'], preserveScroll: true });
+    }, 2000);
+};
+
+const stopPolling = (): void => {
+    if (pollInterval) {
+        clearInterval(pollInterval);
+        pollInterval = null;
+    }
+};
+
+onMounted(() => {
+    if (hasPendingJobs.value) startPolling();
+});
+
+onUnmounted(() => stopPolling());
 
 const dispatchJob = () => {
     dispatching.value = true;
-    router.post('/demo/queue', {}, {
+    router.post(dispatchAction.url(), {}, {
         preserveScroll: true,
         onFinish: () => {
             dispatching.value = false;
+            startPolling();
         },
     });
 };
@@ -38,6 +63,10 @@ const dispatchJob = () => {
 const refreshJobs = () => {
     router.reload({ only: ['jobs'], preserveScroll: true });
 };
+
+watch(hasPendingJobs, (pending) => {
+    if (!pending) stopPolling();
+});
 
 const statusColor = (status: string): string => {
     switch (status) {

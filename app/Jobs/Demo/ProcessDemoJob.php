@@ -2,9 +2,9 @@
 
 namespace App\Jobs\Demo;
 
+use App\Models\DemoJob;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
-use Illuminate\Support\Facades\Cache;
 
 class ProcessDemoJob implements ShouldQueue
 {
@@ -14,7 +14,7 @@ class ProcessDemoJob implements ShouldQueue
      * Create a new job instance.
      */
     public function __construct(
-        public string $jobId,
+        public int $demoJobId,
         public int $sleepSeconds = 3,
     ) {}
 
@@ -23,17 +23,22 @@ class ProcessDemoJob implements ShouldQueue
      */
     public function handle(): void
     {
-        Cache::put("demo-job:{$this->jobId}", [
+        $demoJob = DemoJob::query()->find($this->demoJobId);
+
+        if (! $demoJob) {
+            return;
+        }
+
+        $demoJob->update([
             'status' => 'processing',
-            'started_at' => now()->toISOString(),
-        ], 300);
+            'started_at' => now(),
+        ]);
 
         sleep($this->sleepSeconds);
 
-        Cache::put("demo-job:{$this->jobId}", [
+        $demoJob->update([
             'status' => 'completed',
-            'started_at' => now()->toISOString(),
-            'completed_at' => now()->toISOString(),
-        ], 300);
+            'completed_at' => now(),
+        ]);
     }
 }

@@ -4,22 +4,26 @@ namespace App\Http\Controllers\Demo;
 
 use App\Http\Controllers\Controller;
 use App\Jobs\Demo\ProcessDemoJob;
+use App\Models\DemoJob;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Str;
+use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
 
 class QueueController extends Controller
 {
-    public function index(): Response
+    public function index(Request $request): Response
     {
-        $recentJobIds = Cache::get('demo-job-ids', []);
-
-        $jobs = collect($recentJobIds)->map(fn (string $id) => [
-            'id' => $id,
-            ...Cache::get("demo-job:{$id}", ['status' => 'pending']),
-        ]);
+        $jobs = DemoJob::query()
+            ->latest()
+            ->limit(10)
+            ->get()
+            ->map(fn (DemoJob $job) => [
+                'id' => $job->id,
+                'status' => $job->status,
+                'started_at' => $job->started_at?->toISOString(),
+                'completed_at' => $job->completed_at?->toISOString(),
+            ]);
 
         return Inertia::render('demo/Queue', [
             'jobs' => $jobs,
@@ -27,18 +31,13 @@ class QueueController extends Controller
         ]);
     }
 
-    public function dispatch(): RedirectResponse
+    public function dispatch(Request $request): RedirectResponse
     {
-        $jobId = Str::uuid()->toString();
+        $demoJob = DemoJob::query()->create([
+            'user_id' => $request->user()->id,
+        ]);
 
-        $recentJobIds = Cache::get('demo-job-ids', []);
-        $recentJobIds[] = $jobId;
-        $recentJobIds = array_slice($recentJobIds, -10);
-        Cache::put('demo-job-ids', $recentJobIds, 300);
-
-        Cache::put("demo-job:{$jobId}", ['status' => 'pending'], 300);
-
-        ProcessDemoJob::dispatch($jobId);
+        ProcessDemoJob::dispatch($demoJob->id);
 
         return back();
     }
