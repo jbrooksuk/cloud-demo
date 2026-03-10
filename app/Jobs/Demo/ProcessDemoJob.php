@@ -2,6 +2,7 @@
 
 namespace App\Jobs\Demo;
 
+use App\Events\DemoJobUpdated;
 use App\Models\DemoJob;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
@@ -34,11 +35,24 @@ class ProcessDemoJob implements ShouldQueue
             'started_at' => now(),
         ]);
 
+        DemoJobUpdated::dispatch(
+            id: $demoJob->id,
+            status: 'processing',
+            startedAt: $demoJob->started_at->toISOString(),
+        );
+
         sleep($this->sleepSeconds);
 
         $demoJob->update([
             'status' => 'completed',
             'completed_at' => now(),
         ]);
+
+        DemoJobUpdated::dispatch(
+            id: $demoJob->id,
+            status: 'completed',
+            startedAt: $demoJob->started_at->toISOString(),
+            completedAt: $demoJob->completed_at->toISOString(),
+        );
     }
 }

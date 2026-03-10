@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { Head, router } from '@inertiajs/vue3';
-import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
+import { useEcho } from '@laravel/echo-vue';
+import { computed, ref } from 'vue';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Spinner } from '@/components/ui/spinner';
@@ -9,13 +10,15 @@ import { queue } from '@/routes/demo';
 import { dispatch as dispatchAction } from '@/actions/App/Http/Controllers/Demo/QueueController';
 import type { BreadcrumbItem } from '@/types';
 
+type Job = {
+    id: number;
+    status: string;
+    started_at?: string;
+    completed_at?: string;
+};
+
 const props = defineProps<{
-    jobs: Array<{
-        id: number;
-        status: string;
-        started_at?: string;
-        completed_at?: string;
-    }>;
+    jobs: Job[];
     queueDriver: string;
 }>();
 
@@ -25,29 +28,14 @@ const breadcrumbs: BreadcrumbItem[] = [
 ];
 
 const dispatching = ref(false);
-const hasPendingJobs = computed(() => props.jobs.some(j => j.status !== 'completed'));
+const realtimeUpdates = ref<Map<number, Partial<Job>>>(new Map());
 
-let pollInterval: ReturnType<typeof setInterval> | null = null;
-
-const startPolling = (): void => {
-    if (pollInterval) return;
-    pollInterval = setInterval(() => {
-        router.reload({ only: ['jobs'], preserveScroll: true });
-    }, 2000);
-};
-
-const stopPolling = (): void => {
-    if (pollInterval) {
-        clearInterval(pollInterval);
-        pollInterval = null;
-    }
-};
-
-onMounted(() => {
-    if (hasPendingJobs.value) startPolling();
-});
-
-onUnmounted(() => stopPolling());
+const mergedJobs = computed(() =>
+    props.jobs.map((job) => {
+        const update = realtimeUpdates.value.get(job.id);
+        return update ? { ...job, ...update } : job;
+    }),
+);
 
 const dispatchJob = () => {
     dispatching.value = true;
@@ -55,17 +43,23 @@ const dispatchJob = () => {
         preserveScroll: true,
         onFinish: () => {
             dispatching.value = false;
-            startPolling();
         },
     });
 };
 
-const refreshJobs = () => {
-    router.reload({ only: ['jobs'], preserveScroll: true });
+type JobUpdate = {
+    id: number;
+    status: string;
+    startedAt?: string;
+    completedAt?: string;
 };
 
-watch(hasPendingJobs, (pending) => {
-    if (!pending) stopPolling();
+useEcho('demo', ['DemoJobUpdated'], (e: JobUpdate) => {
+    realtimeUpdates.value.set(e.id, {
+        status: e.status,
+        started_at: e.startedAt,
+        completed_at: e.completedAt,
+    });
 });
 
 const statusColor = (status: string): string => {
@@ -82,7 +76,7 @@ const statusColor = (status: string): string => {
 
     <AppLayout :breadcrumbs="breadcrumbs">
         <div class="flex h-full flex-1 flex-col gap-4 rounded-xl p-4">
-            <div class="grid gap-4 md:grid-cols-3">
+            <div class="grid gap-4 md:grid-cols-2">
                 <Card>
                     <CardHeader>
                         <CardTitle>Driver</CardTitle>
@@ -105,34 +99,22 @@ const statusColor = (status: string): string => {
                         </Button>
                     </CardContent>
                 </Card>
-
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Refresh</CardTitle>
-                        <CardDescription>Check job statuses</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        <Button variant="outline" @click="refreshJobs">
-                            Refresh Status
-                        </Button>
-                    </CardContent>
-                </Card>
             </div>
 
             <Card>
                 <CardHeader>
                     <CardTitle>Recent Jobs</CardTitle>
-                    <CardDescription>Jobs dispatched in the current session</CardDescription>
+                    <CardDescription>Status updates arrive in real-time via websockets</CardDescription>
                 </CardHeader>
                 <CardContent>
-                    <div class="space-y-2" v-if="jobs.length">
+                    <div class="space-y-2" v-if="mergedJobs.length">
                         <div
-                            v-for="job in jobs"
+                            v-for="job in mergedJobs"
                             :key="job.id"
                             class="flex items-center justify-between rounded-md bg-muted px-3 py-2"
                         >
                             <div>
-                                <p class="font-mono text-sm">{{ job.id.substring(0, 8) }}...</p>
+                                <p class="font-mono text-sm">#{{ job.id }}</p>
                                 <p class="text-xs text-muted-foreground" v-if="job.completed_at">
                                     Completed {{ new Date(job.completed_at).toLocaleTimeString() }}
                                 </p>
@@ -157,7 +139,7 @@ const statusColor = (status: string): string => {
                 </CardHeader>
                 <CardContent>
                     <p class="text-sm text-muted-foreground">
-                        Laravel Cloud provides managed <strong>queue workers</strong> that process your queued jobs. Jobs are dispatched using Laravel's queue system and processed by dedicated worker processes. Cloud handles auto-scaling workers based on queue depth, ensuring your jobs are processed efficiently.
+                        Laravel Cloud provides managed <strong>queue workers</strong> that process your queued jobs. Jobs are dispatched using Laravel's queue system and processed by dedicated worker processes. Status updates are broadcast in real-time via <strong>Reverb</strong> websockets.
                     </p>
                 </CardContent>
             </Card>
