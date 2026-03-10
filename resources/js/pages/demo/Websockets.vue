@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Head } from '@inertiajs/vue3';
+import { Head, usePage } from '@inertiajs/vue3';
 import { useEchoPublic } from '@laravel/echo-vue';
 import axios from 'axios';
 import { computed, nextTick, onMounted, onUnmounted, ref } from 'vue';
@@ -27,6 +27,8 @@ const props = defineProps<{
     messages: Message[];
 }>();
 
+const page = usePage();
+const currentUsername = (page.props.auth as { user: { name: string } }).user.name;
 const allMessages = ref<Message[]>([...props.messages]);
 const isConnected = ref(!!import.meta.env.VITE_REVERB_APP_KEY);
 const messagesContainer = ref<HTMLElement | null>(null);
@@ -76,6 +78,7 @@ const sendMessage = async () => {
 };
 
 useEchoPublic('demo', ['DemoUserTyping'], (e: { username: string }) => {
+    if (e.username === currentUsername) return;
     const existing = typingUsers.value.get(e.username);
     if (existing) clearTimeout(existing);
     const timer = setTimeout(() => {
