@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { Head, router } from '@inertiajs/vue3';
+import { Head } from '@inertiajs/vue3';
 import { useEcho } from '@laravel/echo-vue';
-import { computed, ref } from 'vue';
+import axios from 'axios';
+import { ref } from 'vue';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Spinner } from '@/components/ui/spinner';
@@ -28,23 +29,20 @@ const breadcrumbs: BreadcrumbItem[] = [
 ];
 
 const dispatching = ref(false);
-const realtimeUpdates = ref<Map<number, Partial<Job>>>(new Map());
+const allJobs = ref<Job[]>([...props.jobs]);
 
-const mergedJobs = computed(() =>
-    props.jobs.map((job) => {
-        const update = realtimeUpdates.value.get(job.id);
-        return update ? { ...job, ...update } : job;
-    }),
-);
-
-const dispatchJob = () => {
+const dispatchJob = async () => {
     dispatching.value = true;
-    router.post(dispatchAction.url(), {}, {
-        preserveScroll: true,
-        onFinish: () => {
-            dispatching.value = false;
-        },
-    });
+    try {
+        await axios.post(dispatchAction.url());
+    } finally {
+        dispatching.value = false;
+    }
+};
+
+type JobDispatched = {
+    id: number;
+    status: string;
 };
 
 type JobUpdate = {
@@ -54,12 +52,19 @@ type JobUpdate = {
     completedAt?: string;
 };
 
+useEcho('demo', ['DemoJobDispatched'], (e: JobDispatched) => {
+    if (!allJobs.value.some(j => j.id === e.id)) {
+        allJobs.value.unshift({ id: e.id, status: e.status });
+    }
+});
+
 useEcho('demo', ['DemoJobUpdated'], (e: JobUpdate) => {
-    realtimeUpdates.value.set(e.id, {
-        status: e.status,
-        started_at: e.startedAt,
-        completed_at: e.completedAt,
-    });
+    const job = allJobs.value.find(j => j.id === e.id);
+    if (job) {
+        job.status = e.status;
+        job.started_at = e.startedAt;
+        job.completed_at = e.completedAt;
+    }
 });
 
 const statusColor = (status: string): string => {
@@ -104,12 +109,12 @@ const statusColor = (status: string): string => {
             <Card>
                 <CardHeader>
                     <CardTitle>Recent Jobs</CardTitle>
-                    <CardDescription>Status updates arrive in real-time via websockets</CardDescription>
+                    <CardDescription>All visitors see status updates in real-time via websockets</CardDescription>
                 </CardHeader>
                 <CardContent>
-                    <div class="space-y-2" v-if="mergedJobs.length">
+                    <div class="space-y-2" v-if="allJobs.length">
                         <div
-                            v-for="job in mergedJobs"
+                            v-for="job in allJobs"
                             :key="job.id"
                             class="flex items-center justify-between rounded-md bg-muted px-3 py-2"
                         >
@@ -139,7 +144,7 @@ const statusColor = (status: string): string => {
                 </CardHeader>
                 <CardContent>
                     <p class="text-sm text-muted-foreground">
-                        Laravel Cloud provides managed <strong>queue workers</strong> that process your queued jobs. Jobs are dispatched using Laravel's queue system and processed by dedicated worker processes. Status updates are broadcast in real-time via <strong>Reverb</strong> websockets.
+                        Laravel Cloud provides managed <strong>queue workers</strong> that process your queued jobs. Jobs are dispatched using Laravel's queue system and processed by dedicated worker processes. Status updates are broadcast in real-time via <strong>Reverb</strong> websockets — all visitors see updates live.
                     </p>
                 </CardContent>
             </Card>

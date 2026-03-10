@@ -2,10 +2,11 @@
 
 namespace App\Http\Controllers\Demo;
 
+use App\Events\DemoJobDispatched;
 use App\Http\Controllers\Controller;
 use App\Jobs\Demo\ProcessDemoJob;
 use App\Models\DemoJob;
-use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -31,7 +32,7 @@ class QueueController extends Controller
         ]);
     }
 
-    public function dispatch(Request $request): RedirectResponse
+    public function dispatch(Request $request): JsonResponse
     {
         $demoJob = DemoJob::query()->create([
             'user_id' => $request->user()->id,
@@ -39,6 +40,11 @@ class QueueController extends Controller
 
         ProcessDemoJob::dispatch($demoJob->id);
 
-        return back();
+        DemoJobDispatched::dispatch(
+            id: $demoJob->id,
+            status: 'pending',
+        );
+
+        return response()->json(['status' => 'ok']);
     }
 }

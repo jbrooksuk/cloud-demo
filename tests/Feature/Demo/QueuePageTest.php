@@ -19,7 +19,7 @@ test('job can be dispatched', function () {
 
     $response = $this->actingAs($user)->post(route('demo.queue.dispatch'));
 
-    $response->assertRedirect();
+    $response->assertOk();
     Queue::assertPushed(ProcessDemoJob::class);
 });
 
