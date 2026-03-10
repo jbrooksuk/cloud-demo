@@ -45,6 +45,6 @@ class QueueController extends Controller
             status: 'pending',
         );
 
-        return response()->json(['status' => 'ok']);
+        return response()->json(['status' => 'ok', 'id' => $demoJob->id]);
     }
 }

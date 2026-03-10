@@ -34,7 +34,10 @@ const allJobs = ref<Job[]>([...props.jobs]);
 const dispatchJob = async () => {
     dispatching.value = true;
     try {
-        await axios.post(dispatchAction.url());
+        const { data } = await axios.post(dispatchAction.url());
+        if (data.id && !allJobs.value.some(j => j.id === data.id)) {
+            allJobs.value.unshift({ id: data.id, status: 'pending' });
+        }
     } finally {
         dispatching.value = false;
     }
