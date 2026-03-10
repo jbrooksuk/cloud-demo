@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { Head, useForm } from '@inertiajs/vue3';
 import { useEcho } from '@laravel/echo-vue';
-import { ref } from 'vue';
+import { computed, ref } from 'vue';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -22,8 +22,14 @@ type Message = {
     timestamp: string;
 };
 
-const messages = ref<Message[]>([]);
-const isConnected = ref(false);
+const props = defineProps<{
+    messages: Message[];
+}>();
+
+const realtimeMessages = ref<Message[]>([]);
+const isConnected = ref(!!import.meta.env.VITE_REVERB_APP_KEY);
+
+const allMessages = computed(() => [...props.messages, ...realtimeMessages.value]);
 
 const form = useForm({ message: '' });
 
@@ -35,11 +41,9 @@ const sendMessage = () => {
 };
 
 useEcho('demo', ['DemoMessageSent'], (e: Message) => {
-    messages.value.push(e);
+    realtimeMessages.value.push(e);
     isConnected.value = true;
 });
-
-isConnected.value = !!import.meta.env.VITE_REVERB_APP_KEY;
 </script>
 
 <template>
@@ -88,9 +92,9 @@ isConnected.value = !!import.meta.env.VITE_REVERB_APP_KEY;
                         </CardDescription>
                     </CardHeader>
                     <CardContent>
-                        <div class="max-h-64 space-y-2 overflow-y-auto" v-if="messages.length">
+                        <div class="max-h-64 space-y-2 overflow-y-auto" v-if="allMessages.length">
                             <div
-                                v-for="(msg, i) in messages"
+                                v-for="(msg, i) in allMessages"
                                 :key="i"
                                 class="rounded-lg bg-muted p-3"
                             >

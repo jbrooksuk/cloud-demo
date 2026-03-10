@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Demo;
 
 use App\Events\DemoMessageSent;
 use App\Http\Controllers\Controller;
+use App\Models\DemoMessage;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -13,7 +14,21 @@ class WebsocketsController extends Controller
 {
     public function index(): Response
     {
-        return Inertia::render('demo/Websockets');
+        $messages = DemoMessage::query()
+            ->latest()
+            ->limit(50)
+            ->get(['username', 'message', 'created_at'])
+            ->reverse()
+            ->values()
+            ->map(fn (DemoMessage $message) => [
+                'username' => $message->username,
+                'message' => $message->message,
+                'timestamp' => $message->created_at->toISOString(),
+            ]);
+
+        return Inertia::render('demo/Websockets', [
+            'messages' => $messages,
+        ]);
     }
 
     public function send(Request $request): RedirectResponse
@@ -22,10 +37,16 @@ class WebsocketsController extends Controller
             'message' => ['required', 'string', 'max:500'],
         ]);
 
+        $demoMessage = DemoMessage::query()->create([
+            'user_id' => $request->user()->id,
+            'username' => $request->user()->name,
+            'message' => $request->input('message'),
+        ]);
+
         DemoMessageSent::dispatch(
-            username: $request->user()->name,
-            message: $request->input('message'),
-            timestamp: now()->toISOString(),
+            username: $demoMessage->username,
+            message: $demoMessage->message,
+            timestamp: $demoMessage->created_at->toISOString(),
         );
 
         return back();
