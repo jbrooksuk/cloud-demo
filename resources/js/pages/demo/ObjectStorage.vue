@@ -27,12 +27,17 @@ const breadcrumbs: BreadcrumbItem[] = [
 
 const fileInput = ref<HTMLInputElement>();
 const uploading = ref(false);
+const selectedFile = ref<File | null>(null);
+
+const onFileChange = (event: Event) => {
+    const input = event.target as HTMLInputElement;
+    selectedFile.value = input.files?.[0] ?? null;
+};
 
 const uploadFile = () => {
-    const file = fileInput.value?.files?.[0];
-    if (!file) return;
+    if (!selectedFile.value) return;
 
-    const form = useForm({ file });
+    const form = useForm({ file: selectedFile.value });
     uploading.value = true;
 
     form.post('/demo/object-storage', {
@@ -40,6 +45,7 @@ const uploadFile = () => {
         preserveScroll: true,
         onFinish: () => {
             uploading.value = false;
+            selectedFile.value = null;
             if (fileInput.value) fileInput.value.value = '';
         },
     });
@@ -78,9 +84,9 @@ const formatSize = (bytes: number): string => {
                                 ref="fileInput"
                                 type="file"
                                 class="flex-1"
-                                @change="uploadFile"
+                                @change="onFileChange"
                             />
-                            <Button :disabled="uploading" @click="uploadFile">
+                            <Button :disabled="uploading || !selectedFile" @click="uploadFile">
                                 <Spinner v-if="uploading" />
                                 Upload
                             </Button>
