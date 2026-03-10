@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { Head, router, useForm } from '@inertiajs/vue3';
+import { Head } from '@inertiajs/vue3';
 import { useEcho } from '@laravel/echo-vue';
-import { nextTick, ref, watch } from 'vue';
+import axios from 'axios';
+import { nextTick, onMounted, ref } from 'vue';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -26,8 +27,11 @@ const props = defineProps<{
     messages: Message[];
 }>();
 
+const allMessages = ref<Message[]>([...props.messages]);
 const isConnected = ref(!!import.meta.env.VITE_REVERB_APP_KEY);
 const messagesContainer = ref<HTMLElement | null>(null);
+const message = ref('');
+const sending = ref(false);
 
 const scrollToBottom = () => {
     nextTick(() => {
@@ -37,23 +41,24 @@ const scrollToBottom = () => {
     });
 };
 
-watch(() => props.messages.length, () => scrollToBottom());
+onMounted(() => scrollToBottom());
 
-const form = useForm({ message: '' });
+const sendMessage = async () => {
+    if (!message.value || sending.value) return;
 
-const sendMessage = () => {
-    form.post(send.url(), {
-        preserveScroll: true,
-        onSuccess: () => {
-            form.reset('message');
-            scrollToBottom();
-        },
-    });
+    sending.value = true;
+    try {
+        await axios.post(send.url(), { message: message.value });
+        message.value = '';
+    } finally {
+        sending.value = false;
+    }
 };
 
-useEcho('demo', ['DemoMessageSent'], () => {
-    router.reload({ only: ['messages'], preserveScroll: true, onSuccess: () => scrollToBottom() });
+useEcho('demo', ['DemoMessageSent'], (e: Message) => {
+    allMessages.value.push(e);
     isConnected.value = true;
+    scrollToBottom();
 });
 </script>
 
@@ -74,11 +79,11 @@ useEcho('demo', ['DemoMessageSent'], () => {
                         <div
                             ref="messagesContainer"
                             class="mb-4 flex-1 space-y-2 overflow-y-auto"
-                            :class="messages.length ? 'min-h-[24rem]' : ''"
+                            :class="allMessages.length ? 'min-h-[24rem]' : ''"
                         >
-                            <template v-if="messages.length">
+                            <template v-if="allMessages.length">
                                 <div
-                                    v-for="(msg, i) in messages"
+                                    v-for="(msg, i) in allMessages"
                                     :key="i"
                                     class="rounded-lg bg-muted p-3"
                                 >
@@ -103,12 +108,12 @@ useEcho('demo', ['DemoMessageSent'], () => {
                             />
                             <form @submit.prevent="sendMessage" class="flex flex-1 gap-2">
                                 <Input
-                                    v-model="form.message"
+                                    v-model="message"
                                     placeholder="Type a message..."
                                     class="flex-1"
                                 />
-                                <Button type="submit" :disabled="form.processing || !form.message">
-                                    <Spinner v-if="form.processing" />
+                                <Button type="submit" :disabled="sending || !message">
+                                    <Spinner v-if="sending" />
                                     Send
                                 </Button>
                             </form>

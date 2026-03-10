@@ -21,7 +21,7 @@ test('message can be broadcast', function () {
         'message' => 'Hello from the demo!',
     ]);
 
-    $response->assertRedirect();
+    $response->assertOk();
     Event::assertDispatched(DemoMessageSent::class, fn ($event) => $event->message === 'Hello from the demo!'
         && $event->username === $user->name
     );
