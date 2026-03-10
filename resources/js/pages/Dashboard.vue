@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Head, Link } from '@inertiajs/vue3';
-import { ref } from 'vue';
+import { computed } from 'vue';
 import { Database, HardDrive, Radio, Server, Zap } from 'lucide-vue-next';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import AppLayout from '@/layouts/AppLayout.vue';
@@ -26,11 +26,7 @@ const breadcrumbs: BreadcrumbItem[] = [
     },
 ];
 
-const isConnected = ref(false);
-
-if (typeof window !== 'undefined' && (window as any).Echo) {
-    isConnected.value = true;
-}
+const isConnected = computed(() => !!import.meta.env.VITE_REVERB_APP_KEY);
 
 const driverLabel = (driver: string): string => {
     const labels: Record<string, string> = {

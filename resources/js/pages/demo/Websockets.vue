@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { Form, Head, useForm } from '@inertiajs/vue3';
+import { Head, useForm } from '@inertiajs/vue3';
+import { useEcho } from '@laravel/echo-vue';
 import { ref } from 'vue';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -33,15 +34,12 @@ const sendMessage = () => {
     });
 };
 
-// Echo listener - will connect when Laravel Echo is configured
-if (typeof window !== 'undefined' && (window as any).Echo) {
-    (window as any).Echo.channel('demo')
-        .listen('DemoMessageSent', (e: Message) => {
-            messages.value.push(e);
-            isConnected.value = true;
-        });
+useEcho('demo', ['DemoMessageSent'], (e: Message) => {
+    messages.value.push(e);
     isConnected.value = true;
-}
+});
+
+isConnected.value = !!import.meta.env.VITE_REVERB_APP_KEY;
 </script>
 
 <template>
