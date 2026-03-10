@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Link } from '@inertiajs/vue3';
-import { BookOpen, Database, FolderGit2, HardDrive, LayoutGrid, Radio, Server, Zap } from 'lucide-vue-next';
+import { BookOpen, Database, Eye, FolderGit2, HardDrive, LayoutGrid, Radio, Server, Zap } from 'lucide-vue-next';
 import AppLogo from '@/components/AppLogo.vue';
 import NavFooter from '@/components/NavFooter.vue';
 import NavMain from '@/components/NavMain.vue';
@@ -55,6 +55,11 @@ const demoNavItems: NavItem[] = [
 ];
 
 const footerNavItems: NavItem[] = [
+    {
+        title: 'Nightwatch',
+        href: 'https://nightwatch.laravel.com/eu/environments/a1442fee-80c8-444b-8a85-8ab256c9cb1a/dashboard',
+        icon: Eye,
+    },
     {
         title: 'Repository',
         href: 'https://github.com/laravel/vue-starter-kit',

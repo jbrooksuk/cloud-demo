@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\Demo\CacheController;
 use App\Http\Controllers\Demo\DatabaseController;
 use App\Http\Controllers\Demo\ObjectStorageController;
@@ -13,7 +14,7 @@ Route::inertia('/', 'Welcome', [
 ])->name('home');
 
 Route::middleware(['auth', 'verified'])->group(function () {
-    Route::inertia('dashboard', 'Dashboard')->name('dashboard');
+    Route::get('dashboard', DashboardController::class)->name('dashboard');
 
     Route::prefix('demo')->name('demo.')->group(function () {
         Route::get('websockets', [WebsocketsController::class, 'index'])->name('websockets');

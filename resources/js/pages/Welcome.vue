@@ -82,7 +82,7 @@ withDefaults(
                                 <a
                                     href="https://laravel.com/docs"
                                     target="_blank"
-                                    class="ml-1 inline-flex items-center space-x-1 font-medium text-[#f53003] underline underline-offset-4 dark:text-[#FF4433]"
+                                    class="ml-1 inline-flex items-center space-x-1 font-medium text-[color(display-p3_0_0.2431_0.8706/0.851)] underline underline-offset-4 dark:text-[color(display-p3_0.2_0.4_0.95)]"
                                 >
                                     <span>Documentation</span>
                                     <svg
@@ -121,7 +121,7 @@ withDefaults(
                                 <a
                                     href="https://laracasts.com"
                                     target="_blank"
-                                    class="ml-1 inline-flex items-center space-x-1 font-medium text-[#f53003] underline underline-offset-4 dark:text-[#FF4433]"
+                                    class="ml-1 inline-flex items-center space-x-1 font-medium text-[color(display-p3_0_0.2431_0.8706/0.851)] underline underline-offset-4 dark:text-[color(display-p3_0.2_0.4_0.95)]"
                                 >
                                     <span>Laracasts</span>
                                     <svg
@@ -147,7 +147,7 @@ withDefaults(
                             <a
                                 href="https://cloud.laravel.com"
                                 target="_blank"
-                                class="inline-block rounded-sm border border-black bg-[#1b1b18] px-5 py-1.5 text-sm leading-normal text-white hover:border-black hover:bg-black dark:border-[#eeeeec] dark:bg-[#eeeeec] dark:text-[#1C1C1A] dark:hover:border-white dark:hover:bg-white"
+                                class="inline-block rounded-sm border border-transparent bg-primary px-5 py-1.5 text-sm leading-normal text-white hover:bg-primary/90 dark:bg-primary dark:text-white dark:hover:bg-primary/90"
                             >
                                 Deploy now
                             </a>
@@ -155,10 +155,10 @@ withDefaults(
                     </ul>
                 </div>
                 <div
-                    class="relative -mb-px aspect-335/376 w-full shrink-0 overflow-hidden rounded-t-lg bg-[#fff2f2] lg:mb-0 lg:-ml-px lg:aspect-auto lg:w-[438px] lg:rounded-t-none lg:rounded-r-lg dark:bg-[#1D0002]"
+                    class="relative -mb-px aspect-335/376 w-full shrink-0 overflow-hidden rounded-t-lg bg-[#eef2ff] lg:mb-0 lg:-ml-px lg:aspect-auto lg:w-[438px] lg:rounded-t-none lg:rounded-r-lg dark:bg-[#000820]"
                 >
                     <svg
-                        class="w-full max-w-none translate-y-0 text-[#F53003] opacity-100 transition-all duration-750 dark:text-[#F61500] starting:translate-y-6 starting:opacity-0"
+                        class="w-full max-w-none translate-y-0 text-[color(display-p3_0_0.2431_0.8706/0.851)] opacity-100 transition-all duration-750 dark:text-[color(display-p3_0.2_0.4_0.95)] starting:translate-y-6 starting:opacity-0"
                         viewBox="0 0 438 104"
                         fill="none"
                         xmlns="http://www.w3.org/2000/svg"
