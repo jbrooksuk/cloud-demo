@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Demo;
 
 use App\Events\DemoMessageSent;
+use App\Events\DemoUserTyping;
 use App\Http\Controllers\Controller;
 use App\Models\DemoMessage;
 use Illuminate\Http\JsonResponse;
@@ -55,5 +56,14 @@ class WebsocketsController extends Controller
             'message' => $demoMessage->message,
             'timestamp' => $demoMessage->created_at->toISOString(),
         ]);
+    }
+
+    public function typing(Request $request): JsonResponse
+    {
+        DemoUserTyping::dispatch(
+            username: $request->user()->name,
+        );
+
+        return response()->json(['status' => 'ok']);
     }
 }

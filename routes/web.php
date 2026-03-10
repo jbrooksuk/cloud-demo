@@ -19,6 +19,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::prefix('demo')->name('demo.')->group(function () {
         Route::get('websockets', [WebsocketsController::class, 'index'])->name('websockets');
         Route::post('websockets', [WebsocketsController::class, 'send'])->name('websockets.send');
+        Route::post('websockets/typing', [WebsocketsController::class, 'typing'])->name('websockets.typing');
 
         Route::get('database', [DatabaseController::class, 'index'])->name('database');
 

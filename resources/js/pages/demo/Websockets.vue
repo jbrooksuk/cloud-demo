@@ -2,14 +2,14 @@
 import { Head } from '@inertiajs/vue3';
 import { useEchoPublic } from '@laravel/echo-vue';
 import axios from 'axios';
-import { nextTick, onMounted, ref } from 'vue';
+import { computed, nextTick, onMounted, onUnmounted, ref } from 'vue';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Spinner } from '@/components/ui/spinner';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { websockets } from '@/routes/demo';
-import { send } from '@/actions/App/Http/Controllers/Demo/WebsocketsController';
+import { send, typing as typingAction } from '@/actions/App/Http/Controllers/Demo/WebsocketsController';
 import type { BreadcrumbItem } from '@/types';
 
 const breadcrumbs: BreadcrumbItem[] = [
@@ -32,6 +32,22 @@ const isConnected = ref(!!import.meta.env.VITE_REVERB_APP_KEY);
 const messagesContainer = ref<HTMLElement | null>(null);
 const message = ref('');
 const sending = ref(false);
+
+const typingUsers = ref<Map<string, ReturnType<typeof setTimeout>>>(new Map());
+const typingNames = computed(() => [...typingUsers.value.keys()]);
+let typingDebounce: ReturnType<typeof setTimeout> | null = null;
+
+const onInput = () => {
+    if (typingDebounce) clearTimeout(typingDebounce);
+    typingDebounce = setTimeout(() => {
+        axios.post(typingAction.url());
+    }, 300);
+};
+
+onUnmounted(() => {
+    if (typingDebounce) clearTimeout(typingDebounce);
+    typingUsers.value.forEach(timer => clearTimeout(timer));
+});
 
 const scrollToBottom = () => {
     nextTick(() => {
@@ -59,7 +75,21 @@ const sendMessage = async () => {
     }
 };
 
+useEchoPublic('demo', ['DemoUserTyping'], (e: { username: string }) => {
+    const existing = typingUsers.value.get(e.username);
+    if (existing) clearTimeout(existing);
+    const timer = setTimeout(() => {
+        typingUsers.value.delete(e.username);
+    }, 2000);
+    typingUsers.value.set(e.username, timer);
+});
+
 useEchoPublic('demo', ['DemoMessageSent'], (e: Message) => {
+    const existingTimer = typingUsers.value.get(e.username);
+    if (existingTimer) {
+        clearTimeout(existingTimer);
+        typingUsers.value.delete(e.username);
+    }
     if (!allMessages.value.some(m => m.timestamp === e.timestamp && m.username === e.username)) {
         allMessages.value.push(e);
         scrollToBottom();
@@ -106,6 +136,10 @@ useEchoPublic('demo', ['DemoMessageSent'], (e: Message) => {
                             </p>
                         </div>
 
+                        <p v-if="typingNames.length" class="mb-2 text-xs text-muted-foreground italic">
+                            {{ typingNames.join(', ') }} {{ typingNames.length === 1 ? 'is' : 'are' }} typing...
+                        </p>
+
                         <div class="flex items-center gap-2 border-t pt-4">
                             <div
                                 class="size-2.5 shrink-0 rounded-full"
@@ -116,6 +150,7 @@ useEchoPublic('demo', ['DemoMessageSent'], (e: Message) => {
                                     v-model="message"
                                     placeholder="Type a message..."
                                     class="flex-1"
+                                    @input="onInput"
                                 />
                                 <Button type="submit" :disabled="sending || !message">
                                     <Spinner v-if="sending" />
