@@ -48,17 +48,23 @@ const sendMessage = async () => {
 
     sending.value = true;
     try {
-        await axios.post(send.url(), { message: message.value });
+        const { data } = await axios.post(send.url(), { message: message.value });
         message.value = '';
+        if (data.timestamp && !allMessages.value.some(m => m.timestamp === data.timestamp && m.username === data.username)) {
+            allMessages.value.push({ username: data.username, message: data.message, timestamp: data.timestamp });
+            scrollToBottom();
+        }
     } finally {
         sending.value = false;
     }
 };
 
 useEcho('demo', ['DemoMessageSent'], (e: Message) => {
-    allMessages.value.push(e);
+    if (!allMessages.value.some(m => m.timestamp === e.timestamp && m.username === e.username)) {
+        allMessages.value.push(e);
+        scrollToBottom();
+    }
     isConnected.value = true;
-    scrollToBottom();
 });
 </script>
 

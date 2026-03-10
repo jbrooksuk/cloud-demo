@@ -53,6 +53,11 @@ class WebsocketsController extends Controller
             // Broadcasting may not be available; the message was still saved.
         }
 
-        return response()->json(['status' => 'ok']);
+        return response()->json([
+            'status' => 'ok',
+            'username' => $demoMessage->username,
+            'message' => $demoMessage->message,
+            'timestamp' => $demoMessage->created_at->toISOString(),
+        ]);
     }
 }
