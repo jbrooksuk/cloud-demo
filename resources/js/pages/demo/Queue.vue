@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Head } from '@inertiajs/vue3';
-import { useEcho } from '@laravel/echo-vue';
+import { useEchoPublic } from '@laravel/echo-vue';
 import axios from 'axios';
 import { ref } from 'vue';
 import { Button } from '@/components/ui/button';
@@ -55,13 +55,13 @@ type JobUpdate = {
     completedAt?: string;
 };
 
-useEcho('demo', ['DemoJobDispatched'], (e: JobDispatched) => {
+useEchoPublic('demo', ['DemoJobDispatched'], (e: JobDispatched) => {
     if (!allJobs.value.some(j => j.id === e.id)) {
         allJobs.value.unshift({ id: e.id, status: e.status });
     }
 });
 
-useEcho('demo', ['DemoJobUpdated'], (e: JobUpdate) => {
+useEchoPublic('demo', ['DemoJobUpdated'], (e: JobUpdate) => {
     const job = allJobs.value.find(j => j.id === e.id);
     if (job) {
         job.status = e.status;

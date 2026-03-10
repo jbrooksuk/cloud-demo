@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Head } from '@inertiajs/vue3';
-import { useEcho } from '@laravel/echo-vue';
+import { useEchoPublic } from '@laravel/echo-vue';
 import axios from 'axios';
 import { nextTick, onMounted, ref } from 'vue';
 import { Button } from '@/components/ui/button';
@@ -59,7 +59,7 @@ const sendMessage = async () => {
     }
 };
 
-useEcho('demo', ['DemoMessageSent'], (e: Message) => {
+useEchoPublic('demo', ['DemoMessageSent'], (e: Message) => {
     if (!allMessages.value.some(m => m.timestamp === e.timestamp && m.username === e.username)) {
         allMessages.value.push(e);
         scrollToBottom();

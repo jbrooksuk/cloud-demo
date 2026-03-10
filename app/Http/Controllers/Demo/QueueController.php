@@ -40,14 +40,10 @@ class QueueController extends Controller
 
         ProcessDemoJob::dispatch($demoJob->id);
 
-        try {
-            DemoJobDispatched::dispatch(
-                id: $demoJob->id,
-                status: 'pending',
-            );
-        } catch (\Throwable) {
-            // Broadcasting may not be available; the job was still created.
-        }
+        DemoJobDispatched::dispatch(
+            id: $demoJob->id,
+            status: 'pending',
+        );
 
         return response()->json(['status' => 'ok', 'id' => $demoJob->id]);
     }
