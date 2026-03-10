@@ -20,7 +20,7 @@ test('cache value can be stored', function () {
         'ttl' => 60,
     ]);
 
-    $response->assertRedirect();
+    $response->assertOk();
     expect(Cache::get('demo:message'))->toBe('Hello, Cloud!');
 });
 
@@ -38,8 +38,9 @@ test('cache can be flushed', function () {
     Cache::put('demo:counter', 5);
     Cache::put('demo:message', 'test');
 
-    $this->actingAs($user)->delete(route('demo.cache.flush'));
+    $response = $this->actingAs($user)->delete(route('demo.cache.flush'));
 
+    $response->assertOk();
     expect(Cache::has('demo:counter'))->toBeFalse();
     expect(Cache::has('demo:message'))->toBeFalse();
 });

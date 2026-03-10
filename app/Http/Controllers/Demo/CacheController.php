@@ -2,8 +2,9 @@
 
 namespace App\Http\Controllers\Demo;
 
+use App\Events\DemoCacheUpdated;
 use App\Http\Controllers\Controller;
-use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Inertia\Inertia;
@@ -11,23 +12,17 @@ use Inertia\Response;
 
 class CacheController extends Controller
 {
+    private const DEMO_KEYS = ['demo:counter', 'demo:message', 'demo:timestamp'];
+
     public function index(): Response
     {
-        $demoKeys = ['demo:counter', 'demo:message', 'demo:timestamp'];
-
-        $entries = collect($demoKeys)->map(fn (string $key) => [
-            'key' => $key,
-            'value' => Cache::get($key),
-            'exists' => Cache::has($key),
-        ]);
-
         return Inertia::render('demo/Cache', [
-            'entries' => $entries,
+            'entries' => $this->getEntries(),
             'cacheDriver' => config('cache.default'),
         ]);
     }
 
-    public function store(Request $request): RedirectResponse
+    public function store(Request $request): JsonResponse
     {
         $request->validate([
             'key' => ['required', 'string', 'max:100'],
@@ -37,22 +32,43 @@ class CacheController extends Controller
 
         Cache::put($request->input('key'), $request->input('value'), $request->integer('ttl'));
 
-        return back();
+        $entries = $this->getEntries();
+        DemoCacheUpdated::dispatch(entries: $entries);
+
+        return response()->json(['entries' => $entries]);
     }
 
-    public function flush(): RedirectResponse
+    public function flush(): JsonResponse
     {
         Cache::forget('demo:counter');
         Cache::forget('demo:message');
         Cache::forget('demo:timestamp');
 
-        return back();
+        $entries = $this->getEntries();
+        DemoCacheUpdated::dispatch(entries: $entries);
+
+        return response()->json(['entries' => $entries]);
     }
 
-    public function increment(): RedirectResponse
+    public function increment(): JsonResponse
     {
         Cache::increment('demo:counter');
 
-        return back();
+        $entries = $this->getEntries();
+        DemoCacheUpdated::dispatch(entries: $entries);
+
+        return response()->json(['entries' => $entries]);
+    }
+
+    /**
+     * @return array<int, array{key: string, value: string|null, exists: bool}>
+     */
+    private function getEntries(): array
+    {
+        return collect(self::DEMO_KEYS)->map(fn (string $key) => [
+            'key' => $key,
+            'value' => Cache::get($key),
+            'exists' => Cache::has($key),
+        ])->all();
     }
 }

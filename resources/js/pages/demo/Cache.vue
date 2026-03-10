@@ -1,5 +1,8 @@
 <script setup lang="ts">
-import { Head, router, useForm } from '@inertiajs/vue3';
+import { Head } from '@inertiajs/vue3';
+import { useEchoPublic } from '@laravel/echo-vue';
+import axios from 'axios';
+import { ref } from 'vue';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -7,14 +10,17 @@ import { Label } from '@/components/ui/label';
 import { Spinner } from '@/components/ui/spinner';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { cache } from '@/routes/demo';
+import { store, increment as incrementAction, flush as flushAction } from '@/actions/App/Http/Controllers/Demo/CacheController';
 import type { BreadcrumbItem } from '@/types';
 
+type CacheEntry = {
+    key: string;
+    value: string | null;
+    exists: boolean;
+};
+
 const props = defineProps<{
-    entries: Array<{
-        key: string;
-        value: string | null;
-        exists: boolean;
-    }>;
+    entries: CacheEntry[];
     cacheDriver: string;
 }>();
 
@@ -23,26 +29,56 @@ const breadcrumbs: BreadcrumbItem[] = [
     { title: 'Cache', href: cache() },
 ];
 
-const form = useForm({
-    key: 'demo:message',
-    value: '',
-    ttl: 60,
+const allEntries = ref<CacheEntry[]>([...props.entries]);
+const incrementing = ref(false);
+const flushing = ref(false);
+const storing = ref(false);
+const formKey = ref('demo:message');
+const formValue = ref('');
+const formTtl = ref(60);
+
+const updateEntries = (entries: CacheEntry[]) => {
+    allEntries.value = entries;
+};
+
+const incrementCounter = async () => {
+    incrementing.value = true;
+    try {
+        const { data } = await axios.post(incrementAction.url());
+        updateEntries(data.entries);
+    } finally {
+        incrementing.value = false;
+    }
+};
+
+const flushCache = async () => {
+    flushing.value = true;
+    try {
+        const { data } = await axios.delete(flushAction.url());
+        updateEntries(data.entries);
+    } finally {
+        flushing.value = false;
+    }
+};
+
+const storeValue = async () => {
+    storing.value = true;
+    try {
+        const { data } = await axios.post(store.url(), {
+            key: formKey.value,
+            value: formValue.value,
+            ttl: formTtl.value,
+        });
+        updateEntries(data.entries);
+        formValue.value = '';
+    } finally {
+        storing.value = false;
+    }
+};
+
+useEchoPublic('demo', ['DemoCacheUpdated'], (e: { entries: CacheEntry[] }) => {
+    updateEntries(e.entries);
 });
-
-const storeValue = () => {
-    form.post('/demo/cache', {
-        preserveScroll: true,
-        onSuccess: () => form.reset('value'),
-    });
-};
-
-const incrementCounter = () => {
-    router.post('/demo/cache/increment', {}, { preserveScroll: true });
-};
-
-const flushCache = () => {
-    router.delete('/demo/cache', { preserveScroll: true });
-};
 </script>
 
 <template>
@@ -68,9 +104,10 @@ const flushCache = () => {
                     </CardHeader>
                     <CardContent>
                         <p class="text-2xl font-bold">
-                            {{ entries.find(e => e.key === 'demo:counter')?.value ?? 0 }}
+                            {{ allEntries.find(e => e.key === 'demo:counter')?.value ?? 0 }}
                         </p>
-                        <Button size="sm" class="mt-2" @click="incrementCounter">
+                        <Button size="sm" class="mt-2" :disabled="incrementing" @click="incrementCounter">
+                            <Spinner v-if="incrementing" />
                             Increment
                         </Button>
                     </CardContent>
@@ -82,7 +119,8 @@ const flushCache = () => {
                         <CardDescription>Manage demo cache entries</CardDescription>
                     </CardHeader>
                     <CardContent>
-                        <Button variant="destructive" size="sm" @click="flushCache">
+                        <Button variant="destructive" size="sm" :disabled="flushing" @click="flushCache">
+                            <Spinner v-if="flushing" />
                             Flush Demo Cache
                         </Button>
                     </CardContent>
@@ -99,18 +137,18 @@ const flushCache = () => {
                         <form @submit.prevent="storeValue" class="space-y-4">
                             <div class="grid gap-2">
                                 <Label for="cache-key">Key</Label>
-                                <Input id="cache-key" v-model="form.key" placeholder="demo:message" />
+                                <Input id="cache-key" v-model="formKey" placeholder="demo:message" />
                             </div>
                             <div class="grid gap-2">
                                 <Label for="cache-value">Value</Label>
-                                <Input id="cache-value" v-model="form.value" placeholder="Hello, Cloud!" />
+                                <Input id="cache-value" v-model="formValue" placeholder="Hello, Cloud!" />
                             </div>
                             <div class="grid gap-2">
                                 <Label for="cache-ttl">TTL (seconds)</Label>
-                                <Input id="cache-ttl" v-model.number="form.ttl" type="number" min="1" max="3600" />
+                                <Input id="cache-ttl" v-model.number="formTtl" type="number" min="1" max="3600" />
                             </div>
-                            <Button type="submit" :disabled="form.processing">
-                                <Spinner v-if="form.processing" />
+                            <Button type="submit" :disabled="storing">
+                                <Spinner v-if="storing" />
                                 Store
                             </Button>
                         </form>
@@ -125,7 +163,7 @@ const flushCache = () => {
                     <CardContent>
                         <div class="space-y-2">
                             <div
-                                v-for="entry in entries"
+                                v-for="entry in allEntries"
                                 :key="entry.key"
                                 class="rounded-md bg-muted px-3 py-2"
                             >
