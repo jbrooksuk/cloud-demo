@@ -10,8 +10,6 @@ class ExceptionController extends Controller
 {
     public function __invoke(): Response
     {
-        throw new \RuntimeException('This exception is intentional! Use AI to fix it.');
-
         return Inertia::render('demo/Exception');
     }
 }
