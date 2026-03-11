@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Link } from '@inertiajs/vue3';
-import { BookOpen, Database, Eye, FolderGit2, HardDrive, LayoutGrid, Radio, Server, Zap } from 'lucide-vue-next';
+import { AlertTriangle, BookOpen, Database, Eye, FolderGit2, HardDrive, LayoutGrid, Radio, Server, Zap } from 'lucide-vue-next';
 import AppLogo from '@/components/AppLogo.vue';
 import NavFooter from '@/components/NavFooter.vue';
 import NavMain from '@/components/NavMain.vue';
@@ -15,7 +15,7 @@ import {
     SidebarMenuItem,
 } from '@/components/ui/sidebar';
 import { dashboard } from '@/routes';
-import { websockets, database, objectStorage, cache, queue } from '@/routes/demo';
+import { websockets, database, objectStorage, cache, queue, exception } from '@/routes/demo';
 import type { NavItem } from '@/types';
 
 const mainNavItems: NavItem[] = [
@@ -51,6 +51,11 @@ const demoNavItems: NavItem[] = [
         title: 'Queue Workers',
         href: queue(),
         icon: Server,
+    },
+    {
+        title: 'Exception',
+        href: exception(),
+        icon: AlertTriangle,
     },
 ];
 

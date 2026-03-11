@@ -3,6 +3,7 @@
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\Demo\CacheController;
 use App\Http\Controllers\Demo\DatabaseController;
+use App\Http\Controllers\Demo\ExceptionController;
 use App\Http\Controllers\Demo\ObjectStorageController;
 use App\Http\Controllers\Demo\QueueController;
 use App\Http\Controllers\Demo\WebsocketsController;
@@ -34,6 +35,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
         Route::get('queue', [QueueController::class, 'index'])->name('queue');
         Route::post('queue', [QueueController::class, 'dispatch'])->name('queue.dispatch');
+
+        Route::get('exception', ExceptionController::class)->name('exception');
     });
 });
 
