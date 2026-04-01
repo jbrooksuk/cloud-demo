@@ -5,7 +5,14 @@
       "Bash(vendor/bin/pint:*)",
       "Bash(npm run:*)",
       "Bash(git init:*)",
-      "Bash(git:*)"
+      "Bash(git:*)",
+      "mcp__nightwatch__list_applications",
+      "mcp__nightwatch__list_issues",
+      "mcp__nightwatch__get_issue",
+      "Bash(composer require:*)",
+      "mcp__laravel-boost__search-docs",
+      "mcp__laravel-boost__browser-logs",
+      "mcp__nightwatch__update_issue"
     ]
   },
   "enabledMcpjsonServers": [

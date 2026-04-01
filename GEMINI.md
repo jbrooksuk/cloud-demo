@@ -26,6 +26,7 @@ This application is a Laravel application and its main Laravel ecosystems packag
 - \@inertiajs/vue3 (INERTIA_VUE) - v2
 - tailwindcss (TAILWINDCSS) - v4
 - vue (VUE) - v3
+- \@laravel/echo-vue (ECHO_VUE) - v2
 - \@laravel/vite-plugin-wayfinder (WAYFINDER_VITE) - v0
 - eslint (ESLINT) - v9
 - prettier (PRETTIER) - v3
