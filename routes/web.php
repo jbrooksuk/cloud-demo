@@ -7,8 +7,14 @@ use App\Http\Controllers\Demo\ExceptionController;
 use App\Http\Controllers\Demo\ObjectStorageController;
 use App\Http\Controllers\Demo\QueueController;
 use App\Http\Controllers\Demo\WebsocketsController;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use Laravel\Fortify\Features;
+
+Route::any('/host', fn (Request $request) => [
+    'host' => $request->getHost(),
+    'headers' => $request->headers->all(),
+])->name('host');
 
 Route::inertia('/', 'Welcome', [
     'canRegister' => Features::enabled(Features::registration()),
